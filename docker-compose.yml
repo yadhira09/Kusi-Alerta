@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kusi_alerta_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kusi_user
+      POSTGRES_PASSWORD: kusi_password
+      POSTGRES_DB: kusi_alerta
+    ports:
+      - "5432:5432"
+    volumes:
+      - kusi_alerta_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kusi_user -d kusi_alerta"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  kusi_alerta_data:

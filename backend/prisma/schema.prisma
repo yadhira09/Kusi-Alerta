@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CITIZEN
+  OPERATOR
+  SERENO
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  OBSERVED
+}
+
+enum SerenoAvailability {
+  DISPONIBLE
+  EN_ATENCION
+  FUERA_SERVICIO
+}
+
+enum AlertStatus {
+  PENDIENTE
+  RECIBIDO
+  ASIGNADO
+  EN_DESPLIEGUE
+  EN_INTERVENCION
+  ATENDIDO
+  RECHAZADO
+}
+
+enum Priority {
+  ALTA
+  MEDIA
+  BAJA
+}
+
+enum ResponsibleRole {
+  CITIZEN
+  OPERATOR
+  SERENO
+  ADMIN
+  SYSTEM
+}
+
+enum RejectedAction {
+  NONE
+  WARNING_GENERATED
+  ACCOUNT_OBSERVED
+}
+
+model User {
+  id               String                  @id @default(uuid())
+  name             String
+  role             UserRole
+  phone            String?
+  status           UserStatus              @default(ACTIVE)
+  createdAt        DateTime                @default(now())
+  alerts           Alert[]                 @relation("CitizenAlerts")
+  sereno           Sereno?
+  rejectedControls RejectedReportControl[]
+}
+
+model Sereno {
+  id           String              @id @default(uuid())
+  userId       String              @unique
+  name         String
+  availability SerenoAvailability  @default(DISPONIBLE)
+  currentZone  String
+  createdAt    DateTime            @default(now())
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alerts       Alert[]
+}
+
+model Alert {
+  id               String          @id @default(uuid())
+  code             String          @unique
+  citizenId        String
+  type             String
+  description      String?
+  locationText     String
+  reference        String
+  latitude         Float?
+  longitude        Float?
+  evidenceText     String?
+  status           AlertStatus     @default(PENDIENTE)
+  priority         Priority
+  assignedSerenoId String?
+  rejectionReason  String?
+  receivedAt       DateTime?
+  assignedAt       DateTime?
+  deploymentAt     DateTime?
+  interventionAt   DateTime?
+  attendedAt       DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  citizen          User            @relation("CitizenAlerts", fields: [citizenId], references: [id])
+  assignedSereno   Sereno?         @relation(fields: [assignedSerenoId], references: [id])
+  histories        AlertHistory[]
+  closure          CaseClosure?
+  rating           Rating?
+  rejectedControl  RejectedReportControl?
+
+  @@index([citizenId])
+  @@index([status])
+  @@index([priority])
+  @@index([assignedSerenoId])
+}
+
+model AlertHistory {
+  id              String          @id @default(uuid())
+  alertId         String
+  status          AlertStatus
+  responsibleRole ResponsibleRole
+  responsibleName String
+  observation     String
+  createdAt       DateTime        @default(now())
+  alert           Alert           @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([alertId])
+}
+
+model CaseClosure {
+  id              String          @id @default(uuid())
+  alertId         String          @unique
+  activity        String
+  observations    String
+  recommendations String
+  result          String
+  createdAt       DateTime        @default(now())
+  alert           Alert           @relation(fields: [alertId], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id        String   @id @default(uuid())
+  alertId   String   @unique
+  stars     Int
+  comment   String?
+  createdAt DateTime @default(now())
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+}
+
+model RejectedReportControl {
+  id        String         @id @default(uuid())
+  citizenId String
+  alertId   String         @unique
+  reason    String
+  action    RejectedAction @default(NONE)
+  createdAt DateTime       @default(now())
+  citizen   User           @relation(fields: [citizenId], references: [id])
+  alert     Alert          @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([citizenId])
+}
