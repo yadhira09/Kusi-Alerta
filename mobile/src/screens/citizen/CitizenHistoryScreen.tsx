@@ -18,11 +18,19 @@ export function CitizenHistoryScreen({ navigation }: Props) {
   const [alerts, setAlerts] = useState<AlertDto[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    const users = await getUsers();
-    const citizenDemo = users.find((user) => user.role === "CITIZEN") ?? null;
-    setCitizen(citizenDemo);
-    if (citizenDemo) setAlerts(await getCitizenHistory(citizenDemo.id));
+ const load = useCallback(async () => {
+    try {
+      const users = await getUsers();
+      const citizenDemo = users.find((user) => user.role === "CITIZEN") ?? null;
+      setCitizen(citizenDemo);
+      if (citizenDemo) {
+        const history = await getCitizenHistory(citizenDemo.id);
+        console.log("HISTORIAL:", JSON.stringify(history));
+        setAlerts(history);
+      }
+    } catch (error) {
+      console.error("ERROR HISTORIAL:", error);
+    }
   }, []);
 
   useEffect(() => {

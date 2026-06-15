@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 
-const LAN_HOST = "http://192.168.18.53:4000";
+const LAN_HOST = "https://bug-free-xylophone-wrxwp9x76vxvc5w7v-8081.app.github.dev/";
 
 export const API_HOST = Platform.select({
   android: LAN_HOST,

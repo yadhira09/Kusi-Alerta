@@ -31,18 +31,27 @@ export function CreateAlertScreen({ navigation, route }: Props) {
     getUsers().then((users) => setCitizen(users.find((user) => user.role === "CITIZEN") ?? null)).catch(() => undefined);
   }, []);
 
-  async function submit() {
-    try {
-      setSubmitting(true);
-      const alert = await createAlert({ citizenId: citizen?.id, type: selectedType, reference, description, evidenceText });
-      Alert.alert("Tu alerta fue enviada", `Código de seguimiento: ${alert.code}. Mantente en una zona segura.`);
-      navigation.replace("CitizenTracking", { alertId: alert.id, citizenId: alert.citizenId });
-    } catch (error) {
-      Alert.alert("No se pudo enviar", "Revisa que el backend esté activo y vuelve a intentar.");
-    } finally {
-      setSubmitting(false);
-    }
+async function submit() {
+  try {
+    setSubmitting(true);
+    const alerta = await createAlert({
+      citizenId: citizen?.id,
+      type: selectedType,
+      reference,
+      description,
+      evidenceText: evidenceText || "Sin evidencia",
+    });
+    navigation.replace("CitizenHome");
+    setTimeout(() => {
+      Alert.alert("✅ Alerta enviada", `Código: ${alerta.code}`);
+    }, 300);
+  } catch (error) {
+    console.error("ERROR AL ENVIAR:", error); // 👈 esto te mostrará el error real
+    Alert.alert("No se pudo enviar", "Revisa que el backend esté activo.");
+  } finally {
+    setSubmitting(false);
   }
+}
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
